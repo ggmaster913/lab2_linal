@@ -5,7 +5,7 @@ from perceptron import Perceptron
 from data_utils import standardize, stratified_split, generate_custom_data
 
 
-# Функция расчета метрик из задания
+# Функция расчета метрик классификации
 def calculate_metrics(y_true, y_pred):
     TP = np.sum((y_true == 1) & (y_pred == 1))
     TN = np.sum((y_true == 0) & (y_pred == 0))
@@ -21,7 +21,7 @@ def calculate_metrics(y_true, y_pred):
 
 
 def plot_decision_boundary(model, X, y, title="Разделяющая граница"):
-    # Рисуем красивый график с прямой
+    # Построение графика гиперплоскости и распределения данных
     x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
     y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
     xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.05),
@@ -33,7 +33,7 @@ def plot_decision_boundary(model, X, y, title="Разделяющая грани
     plt.contourf(xx, yy, Z, alpha=0.3, cmap='bwr')
     plt.scatter(X[:, 0], X[:, 1], c=y, edgecolors='k', cmap='bwr')
 
-    # Отмечаем ошибки крестиками (желтыми)
+    # Выделение ошибочно классифицированных объектов
     preds = model.predict(X)
     errors = X[y != preds]
     if len(errors) > 0:
@@ -45,39 +45,35 @@ def plot_decision_boundary(model, X, y, title="Разделяющая грани
 
 
 if __name__ == "__main__":
-    # 1. Готовим данные
-    # X, y = make_classification(n_samples=500, n_features=2, n_redundant=0,
-    #                            n_informative=2, random_state=42, n_clusters_per_class=1)
-
-    # Будем юзать свой генератор для бонусов
+    # 1. Генерация и подготовка данных
     X, y = generate_custom_data(data_type='linear')
     X_train, X_test, y_train, y_test = stratified_split(X, y)
     X_train, X_test = standardize(X_train, X_test)
 
-    # 2. Обучаем модель (базовые параметры из ТЗ)
+    # 2. Обучение модели
     model = Perceptron(input_dim=2)
     train_loss, val_loss = model.fit(X_train, y_train, X_test, y_test,
-                                     epochs=100, lr=0.1, batch_size=32, momentum_beta=0.9)
+                                     epochs=100, lr=0.1, batch_size=32, momentum_beta=0.99)
 
-    # 3. Смотрим метрики
+    # 3. Расчет метрик
     y_pred_train = model.predict(X_train)
     y_pred_test = model.predict(X_test)
 
     acc_train, _, _, _ = calculate_metrics(y_train, y_pred_train)
     acc_test, prec, rec, f1 = calculate_metrics(y_test, y_pred_test)
 
-    print(f"Точность на трейне: {acc_train:.4f}")
-    print(f"Точность на тесте: {acc_test:.4f}")
-    print(f"Precision: {prec:.4f}, Recall: {rec:.4f}, F1: {f1:.4f}")
+    print(f"Accuracy (Train): {acc_train:.4f}")
+    print(f"Accuracy (Test): {acc_test:.4f}")
+    print(f"Precision: {prec:.4f}, Recall: {rec:.4f}, F1-score: {f1:.4f}")
 
-    # 4. Графики Loss
+    # 4. Визуализация функции потерь
     plt.plot(train_loss, label='Train Loss')
     plt.plot(val_loss, label='Val Loss')
     plt.xlabel('Эпохи')
     plt.ylabel('Loss')
-    plt.title('График падения ошибки')
+    plt.title('Динамика функции потерь')
     plt.legend()
     plt.show()
 
-    # 5. Разделяющая граница
+    # 5. Визуализация разделяющей границы
     plot_decision_boundary(model, X_test, y_test)
